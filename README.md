@@ -54,13 +54,6 @@ As time progresses, more work will be done to tune the PID controllers so that t
 This action is baked into the default FBW flight model. By disabling it and replacing it with our own, we lose that protection.
 This will need to be fixed upstream in the main A32NX project or A32NX systems project.
 
-#### High angle of attack protection does not maintain best climb rate/angle
-
-High angle of attack protection is implemented using data from the FCOM.
-Unfortunately, this does not seem to match up with the flight model in the sim (the plane's climb angle is not maximum at the 1G stall speed).
-Work will need to be done to figure out best climb angle/rate from the current flight model at different parameters and then that can be used.
-Alternatively, the flight model can be tuned.
-
 #### The ELAC/SEC/FAC buttons are inoperative
 
 The ELAC/SEC/FAC buttons are tied to the default FBW state. By disabling it and replacing it with our own, they show as disabled.
