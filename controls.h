@@ -1,13 +1,12 @@
 #pragma once
 #include "common.h"
-#include "aircraft_data.h"
+#include "data.h"
 #include "input.h"
 #include "roll.h"
 #include "pitch.h"
 
 class ControlSurfaces
 {
-private:
 	struct CONTROL_SURFACES_DATA
 	{
 		double elevator = 0; // -1 is full down, and +1 is full up
@@ -29,9 +28,9 @@ public:
 		SimConnect_AddToDataDefinition(hSimConnect, CONTROL_SURFACES_DEFINITION, "AILERON POSITION", "Position");
 		SimConnect_AddToDataDefinition(hSimConnect, CONTROL_SURFACES_DEFINITION, "RUDDER POSITION", "Position");
 	}
-	void Update(const double t, const double dt)
+	void Update()
 	{
-		if (aircraft_data.Autopilot())
+		if (data.Autopilot())
 		{
 			// Allow the user's raw flight control inputs to go through if the autopilot is on
 			control_surfaces.elevator = input_capture.RawYokeY();
@@ -41,8 +40,8 @@ public:
 		else
 		{
 			// We are controlling the plane through FBW
-			control_surfaces.ailerons = roll_controller.Calculate(control_surfaces.ailerons, t, dt);
-			control_surfaces.elevator = pitch_controller.Calculate(control_surfaces.elevator, t, dt);
+			control_surfaces.ailerons = roll_controller.Calculate(control_surfaces.ailerons);
+			control_surfaces.elevator = pitch_controller.Calculate(control_surfaces.elevator);
 			control_surfaces.rudder = input_capture.RawRudder(); // TODO: Create yaw FBW
 		}
 		SimConnect_SetDataOnSimObject(hSimConnect, CONTROL_SURFACES_DEFINITION, SIMCONNECT_OBJECT_ID_USER, 0, 0, sizeof(control_surfaces), &control_surfaces);

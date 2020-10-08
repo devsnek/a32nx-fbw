@@ -18,7 +18,6 @@ void CALLBACK OnInputCaptureEvent(SIMCONNECT_RECV* pData, DWORD cbData, void* pC
 
 class InputCapture
 {
-private:
 	double yoke_y; // -1 is full down, and +1 is full up
 	double yoke_x; // -1 is full left, and +1 is full right
 	double rudder; // -1 is full left, and +1 is full right
@@ -72,13 +71,9 @@ public:
 		SimConnect_SetNotificationGroupPriority(hSimConnect, AILERON_GROUP, SIMCONNECT_GROUP_PRIORITY_HIGHEST_MASKABLE);
 		SimConnect_SetNotificationGroupPriority(hSimConnect, RUDDER_GROUP, SIMCONNECT_GROUP_PRIORITY_HIGHEST_MASKABLE);
 	}
-	void Update(const double t, const double dt)
+	void Update()
 	{
 		SimConnect_CallDispatch(hSimConnect, OnInputCaptureEvent, nullptr);
-	}
-	void Destroy()
-	{
-		// TODO: Unregister all the input capture?
 	}
 };
 

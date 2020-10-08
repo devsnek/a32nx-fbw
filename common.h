@@ -5,6 +5,9 @@
 #include <MSFS/Legacy/gauges.h>
 #include <SimConnect.h>
 #include <cmath>
+#include <iostream>
+#include <string>
+#include <sys/time.h>
 
 HANDLE hSimConnect = 0;
 
@@ -56,3 +59,21 @@ constexpr double linear_range(const double coefficient, const double min, const 
 {
 	return (max - min) * coefficient + min;
 }
+
+class SimTime
+{
+	struct timeval now {};
+	double current_time = 0;
+	double previous_time = 0;
+public:
+	double CurrentTime() { return current_time; }
+	double DeltaTime() { return (previous_time == 0) ? 0 : current_time - previous_time; }
+	
+	void Update()
+	{
+		gettimeofday(&now, nullptr);
+		previous_time = current_time;
+		current_time = static_cast<double>(now.tv_sec) + static_cast<double>(now.tv_usec) / 1000000.0;
+	}
+};
+SimTime sim_time;

@@ -6,15 +6,15 @@
 
 class RollController
 {
-private:
 	double roll = 0; // The desired bank angle
 	PIDController controller = PIDController(-1, 1, 0.10, 0, 0.02);
 public:
-	double Calculate(const double current_ailerons, const double t, const double dt)
+	double Calculate(const double current_ailerons)
 	{
+		const auto dt = sim_time.DeltaTime();
 		// TODO: Handle other control laws besides normal law
 
-		if (pitch_control_mode.Mode() == FLIGHT_MODE || pitch_control_mode.Mode() == FLARE_MODE)
+		if (pitch_control_mode.Mode() == PITCH_CONTROL_MODE::FLIGHT_MODE || pitch_control_mode.Mode() == PITCH_CONTROL_MODE::FLARE_MODE)
 		{
 			if (input_capture.YokeX() == 0)
 			{
@@ -36,7 +36,7 @@ public:
 				roll += 15 * input_capture.YokeX() * dt; // 15 degrees/sec at maximum deflection
 				roll = clamp(roll, -normal_law_protections.MaxBankAngle(), normal_law_protections.MaxBankAngle());
 			}
-			return controller.Update(roll - aircraft_data.Roll(), dt);
+			return controller.Update(roll - data.Roll(), dt);
 		}
 		else
 		{

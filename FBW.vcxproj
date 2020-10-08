@@ -12,7 +12,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{E15E82AA-FDC0-45C8-86A9-9DA59BC8A009}</ProjectGuid>
+    <ProjectGuid>{691392AC-AECF-4197-8F7F-37B7AEB41D4B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>FBW</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
@@ -20,13 +20,13 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|MSFS'" Label="Configuration">
-    <ConfigurationType>WasmModule</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>MSFS</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|MSFS'" Label="Configuration">
-    <ConfigurationType>WasmModule</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>MSFS</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -74,7 +74,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <NoEntryPoint>true</NoEntryPoint>
     </Link>
-    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|MSFS'">
     <ClCompile>
@@ -98,19 +97,20 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <NoEntryPoint>true</NoEntryPoint>
     </Link>
-    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="fbw_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="data.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="controls.h" />
+    <ClInclude Include="data_recorder.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="neural_net.h" />
     <ClInclude Include="pid.h" />
     <ClInclude Include="pitch.h" />
     <ClInclude Include="pitch_control_mode.h" />
-    <ClInclude Include="aircraft_data.h" />
     <ClInclude Include="protections.h" />
     <ClInclude Include="roll.h" />
   </ItemGroup>

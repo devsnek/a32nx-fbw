@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="fbw_sys.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="common.h" />
+    <ClInclude Include="controls.h" />
+    <ClInclude Include="input.h" />
+    <ClInclude Include="pid.h" />
+    <ClInclude Include="pitch.h" />
+    <ClInclude Include="pitch_control_mode.h" />
+    <ClInclude Include="protections.h" />
+    <ClInclude Include="roll.h" />
+    <ClInclude Include="data_recorder.h" />
+    <ClInclude Include="data.h" />
+    <ClInclude Include="neural_net.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{127a6c6e-3b72-4223-a37d-c591874b3b6f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,10 +1,9 @@
 #pragma once
-#include "aircraft_data.h"
+#include "data.h"
 #include "input.h"
 
 class NormalLawProtections
 {
-private:
 	double max_bank_angle = 67; // Maximum bank angle in degrees
 									// - Normally: 67 degrees
 									// - High Angle of Attack Protection: 45 degrees
@@ -37,8 +36,9 @@ public:
 	double MinPitchAngle() { return min_pitch_angle; }
 	double NominalBankAngle() { return nominal_bank_angle; }
 	
-	void Update(const double t, const double dt)
+	void Update()
 	{
+		const auto dt = sim_time.DeltaTime();
 		// Check if we are in AoA demand mode (as dictated by the High Angle of Attack Protection)
 		if (aoa_demand_active)
 		{
@@ -52,7 +52,7 @@ public:
 				aoa_demand_active = false;
 				aoa_demand_deactivation_timer = 0;
 			}
-			else if (input_capture.YokeY() < 0 && aircraft_data.Alpha() < aircraft_data.AlphaMax())
+			else if (input_capture.YokeY() < 0 && data.Alpha() < data.AlphaMax())
 			{
 				// We're still building the target duration to meet condition 2
 				aoa_demand_deactivation_timer += dt;
@@ -67,9 +67,9 @@ public:
 		{
 			// Should we enter AoA demand mode?
 			// Enter condition 1: Sidestick must not be pushed down, and AoA is greater than alpha_prot
-			const auto condition1 = input_capture.YokeY() >= 0 && aircraft_data.Alpha() > aircraft_data.AlphaProt();
+			const auto condition1 = input_capture.YokeY() >= 0 && data.Alpha() > data.AlphaProt();
 			// Enter condition 2: We are at or above alpha max
-			const auto condition2 = aircraft_data.Alpha() >= aircraft_data.AlphaMax();
+			const auto condition2 = data.Alpha() >= data.AlphaMax();
 			if (condition1 || condition2)
 			{
 				aoa_demand_active = true;
@@ -78,8 +78,8 @@ public:
 		}
 
 		// Check if high speed protection is active
-		high_speed_protection_active = aircraft_data.IAS() > aircraft_data.Vmo()
-		  	                        || aircraft_data.Mach() > aircraft_data.Mmo();
+		high_speed_protection_active = data.IAS() > data.Vmo()
+		  	                        || data.Mach() > data.Mmo();
 
 		// Update bank angle limits
 		if (aoa_demand_active || high_speed_protection_active)
@@ -94,7 +94,7 @@ public:
 		}
 
 		// Update load and pitch factors
-		switch (aircraft_data.Flaps())
+		switch (data.Flaps())
 		{
 		case 0: // Clean CONF
 			min_load_factor = -1;
