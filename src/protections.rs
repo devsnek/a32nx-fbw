@@ -1,8 +1,6 @@
-use crate::data::Data;
-use crate::input::Input;
-use crate::sim_time::SimTime;
+use crate::{fbw::FBW, Result};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub(crate) struct NormalLawProtections {
     pub(crate) aoa_demand_active: bool,
     pub(crate) aoa_demand_deactivation_timer: f64,
@@ -51,20 +49,20 @@ impl NormalLawProtections {
 }
 
 impl NormalLawProtections {
-    pub(crate) fn update(&mut self, sim_time: &SimTime, data: &Data, input: &Input) {
-        let dt = sim_time.delta();
+    pub(crate) fn update(&mut self, ctx: &FBW) -> Result<()> {
+        let dt = ctx.sim_time.delta();
 
         // Check if we are in AoA demand mode (as dictated by the High Angle of Attack Protection)
         if self.aoa_demand_active {
             // Should we leave AoA demand mode?
-            // Exit condition 1: Sidestick must be pushed more than 8 degrees forward (assuming this is ~50% down)
-            let condition1 = input.yoke_y < -0.5;
+            // Exit condition 1: Sidestick must be pushed more than 8 degrees forward (assuming self is ~50% down)
+            let condition1 = ctx.input.yoke_y < -0.5;
             // Exit condition 2: Sidestick must be pushed more than 0.5 degrees forward for at least 0.5 seconds when alpha < alpha_max
             let condition2 = self.aoa_demand_deactivation_timer >= 0.5;
             if condition1 || condition2 {
                 self.aoa_demand_active = false;
                 self.aoa_demand_deactivation_timer = 0.0;
-            } else if input.yoke_y < 0.0 && data.alpha() < data.alpha_max() {
+            } else if ctx.input.yoke_y < 0.0 && ctx.data.alpha() < ctx.data.alpha_max() {
                 // We're still building the target duration to meet condition 2
                 self.aoa_demand_deactivation_timer += dt;
             } else {
@@ -74,9 +72,9 @@ impl NormalLawProtections {
         } else {
             // Should we enter AoA demand mode?
             // Enter condition 1: Sidestick must not be pushed down, and AoA is greater than alpha_prot
-            let condition1 = input.yoke_y >= 0.0 && data.alpha() > data.alpha_prot();
+            let condition1 = ctx.input.yoke_y >= 0.0 && ctx.data.alpha() > ctx.data.alpha_prot();
             // Enter condition 2: We are at or above alpha max
-            let condition2 = data.alpha() >= data.alpha_max();
+            let condition2 = ctx.data.alpha() >= ctx.data.alpha_max();
             if condition1 || condition2 {
                 self.aoa_demand_active = true;
                 self.aoa_demand_deactivation_timer = 0.0;
@@ -84,7 +82,8 @@ impl NormalLawProtections {
         }
 
         // Check if high speed protection is active
-        self.high_speed_protection_active = data.ias() > data.vmo() || data.mach() > data.mmo();
+        self.high_speed_protection_active =
+            ctx.data.ias() > ctx.data.vmo() || ctx.data.mach() > ctx.data.mmo();
 
         // Update bank angle limits
         if self.aoa_demand_active || self.high_speed_protection_active {
@@ -97,7 +96,7 @@ impl NormalLawProtections {
 
         // Update load and pitch factors
         self.min_pitch_angle = Self::MIN_PITCH_ANGLE_NORMAL;
-        match data.flaps() {
+        match ctx.data.flaps() {
             0 => {
                 self.min_load_factor = Self::MIN_LOAD_FACTOR_NORMAL;
                 self.max_load_factor = Self::MAX_LOAD_FACTOR_NORMAL;
@@ -114,6 +113,8 @@ impl NormalLawProtections {
                 self.max_pitch_angle = Self::MAX_PITCH_ANGLE_PROTECTED;
             }
             _ => unreachable!(),
-        }
+        };
+
+        Ok(())
     }
 }

@@ -1,5 +1,7 @@
+use crate::{fbw::FBW, Result};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[derive(Clone)]
 pub(crate) struct SimTime {
     previous: SystemTime,
     current: SystemTime,
@@ -17,12 +19,14 @@ impl Default for SimTime {
 
 impl SimTime {
     pub(crate) fn init(&mut self) {
-        self.update()
-    }
-
-    pub(crate) fn update(&mut self) {
         self.previous = self.current;
         self.current = SystemTime::now();
+    }
+
+    pub(crate) fn update(&mut self, _: &FBW) -> Result<()> {
+        self.previous = self.current;
+        self.current = SystemTime::now();
+        Ok(())
     }
 
     pub(crate) fn delta(&self) -> f64 {

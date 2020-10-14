@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{fbw::FBW, Result};
 
 #[derive(Default, Clone, serde::Deserialize)]
 pub(crate) struct DataFrame {
@@ -36,6 +36,7 @@ pub(crate) struct DataFrame {
     wind_vertical: f64,     // Vertical wind (relative ot the earth) in feet/second
 }
 
+#[derive(Clone)]
 pub(crate) struct Data {
     frames: Vec<DataFrame>,
 }
@@ -49,15 +50,11 @@ impl Default for Data {
 }
 
 impl Data {
-    pub(crate) fn init(&mut self) -> Result<()> {
-        Ok(())
-    }
-
     fn current_frame(&self) -> &DataFrame {
         self.frames.last().unwrap()
     }
 
-    pub(crate) fn update(&mut self, sim_time: &crate::sim_time::SimTime) -> Result<()> {
+    pub(crate) fn update(&mut self, ctx: &FBW) -> Result<()> {
         self.frames.rotate_right(1);
         let mut frame = self.frames.last_mut().unwrap();
 
@@ -101,7 +98,7 @@ impl Data {
         frame.speed_longitudinal = fetch("VELOCITY WORLD X", "Feet per second", 0, 0.0);
         frame.speed_vertical = fetch("VELOCITY WORLD Y", "Feet per second", 0, 0.0);
         frame.tas = fetch("AIRSPEED true", "Knots", 0, 0.0);
-        frame.time = sim_time.current();
+        frame.time = ctx.sim_time.current();
         frame.vmo = fetch("AIRSPEED BARBER POLE", "Knots", 0, f64::MAX); // TODO: Get this data from the FCOM instead of the SimVar
         frame.weight = fetch("TOTAL WEIGHT", "Pounds", 0, 0.0);
         frame.wind_lateral = fetch("AMBIENT WIND Z", "Feet per second", 0, 0.0);
@@ -153,6 +150,10 @@ impl Data {
 
     pub(crate) fn flaps(&self) -> u8 {
         self.current_frame().flaps
+    }
+
+    pub(crate) fn gforce(&self) -> f64 {
+        self.current_frame().gforce
     }
 
     pub(crate) fn ias(&self) -> f64 {

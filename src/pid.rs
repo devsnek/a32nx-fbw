@@ -1,5 +1,6 @@
 use crate::clamp;
 
+#[derive(Clone)]
 pub(crate) struct PIDController {
     output_min: f64,
     output_max: f64,
