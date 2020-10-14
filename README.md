@@ -32,15 +32,11 @@ To install the FBW system:
 
 ## Compiling
 
-You can compile the gauge by installing Visual Studio 2019 and the Microsoft Flight Simulator 2020 SDK.
+You can compile the gauge by installing Rust and the Microsoft Flight Simulator 2020 SDK.
 
-Once installed, use Visual Studio 2019 to open the `FBW.sln` file, and from there it can be compiled.
+Once installed, use the terminal of your choice to run `cargo build` or `cargo build --release`.
 
-The compilation will create a file in `MSFS\Debug\FBW.wasm` or `MSFS\Release\FBW.wasm`
-
-#### Compilation Without Visual Studio
-
-Compilation without Visual Studio is not supported at this time.
+The compilation will create a file in `target\wasm32-wasi\debug\FBW.wasm` or `target\wasm32-wasi\release\FBW.wasm`.
 
 ## Known issues
 

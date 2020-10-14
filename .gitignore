@@ -1,7 +1,11 @@
-MSFS/**
 .vs/**
+.idea
 *.wasm
 *.bat
 A32NX/build.py
 A32NX/layout.json
 A32NX/manifest.json
+/target
+Cargo.lock
+
+# Added by cargo
