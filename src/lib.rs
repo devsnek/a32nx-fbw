@@ -30,6 +30,23 @@ pub(crate) fn linear_range(coefficient: f64, min: f64, max: f64) -> f64 {
     (max - min) * coefficient + min
 }
 
+/// This function provides a coefficient such that the effectiveness is maximal (1.0) before the start,
+/// reduces linearly up to the end, and after which is no longer effective (0.0).
+///
+/// Effect in the positive direction:
+/// <--- maximum effectiveness (1.0) ---> start <--- linear change to effectiveness ---> end <--- no effectiveness (0.0) --->
+/// Effect in the negative direction:
+/// <--- no effectiveness (0.0) ---> end <--- linear change to effectiveness ---> start <--- maximum effectiveness (1.0) --->}
+pub(crate) fn linear_decay_coefficient(position: f64, start: f64, end: f64) -> f64 {
+    if (start < end && position <= start) || (start >= end && position >= start) {
+        1.0
+    } else if (start < end && position >= end) || (start >= end && position <= end) {
+        0.0
+    } else {
+        1.0 - ((position - start) / (end - start))
+    }
+}
+
 #[gauge(name = FBW)]
 async fn fbw_impl(mut gauge: Gauge) -> Result<()> {
     let sim = gauge.open_simconnect("A32NX_FBW")?;

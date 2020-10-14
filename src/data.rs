@@ -53,6 +53,9 @@ impl Data {
     fn current_frame(&self) -> &DataFrame {
         self.frames.last().unwrap()
     }
+    fn previous_frame(&self) -> &DataFrame {
+        &self.frames[self.frames.len() - 2]
+    }
 
     pub(crate) fn update(&mut self, ctx: &FBW) -> Result<()> {
         self.frames.rotate_right(1);
@@ -166,6 +169,14 @@ impl Data {
 
     pub(crate) fn mmo(&self) -> f64 {
         self.current_frame().mmo
+    }
+
+    pub(crate) fn pitch(&self) -> f64 {
+        self.current_frame().pitch
+    }
+
+    pub(crate) fn pitch_rate(&self, ctx: &FBW) -> f64 {
+        (self.current_frame().pitch - self.previous_frame().pitch) / ctx.sim_time.delta()
     }
 
     pub(crate) fn roll(&self) -> f64 {

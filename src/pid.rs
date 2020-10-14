@@ -52,6 +52,16 @@ impl PIDController {
         output
     }
 
+    // Guard against integrator windup
+    pub(crate) fn update_anti_windup(&mut self, error: f64, dt: f64) -> f64 {
+        if (self.last_output >= self.output_min && self.last_output <= self.output_max)
+            || error.signum() != self.last_output.signum()
+        {
+            self.integral -= error * dt;
+        }
+        self.update(error, dt)
+    }
+
     pub(crate) fn query(&mut self, error: f64, dt: f64) -> f64 {
         let last_error = self.last_error;
         let last_output = self.last_output;

@@ -1,5 +1,6 @@
 use crate::{
-    clamp, fbw::FBW, linear_range, pid::PIDController, pitch_control::PitchControlMode, Result,
+    clamp, fbw::FBW, linear_decay_coefficient, linear_range, pid::PIDController,
+    pitch_control::PitchControlMode, Result,
 };
 use msfs::{
     sim_connect::{data_definition, SimConnect},
@@ -61,6 +62,7 @@ impl Controls {
 struct PitchController {
     aoa_controller: PIDController,
     gforce_controller: PIDController,
+    pitch_rate_controller: PIDController,
 }
 impl Default for PitchController {
     fn default() -> Self {
@@ -69,6 +71,8 @@ impl Default for PitchController {
             aoa_controller: PIDController::new(-2.0, 2.0, 0.002, 0.0, 0.0002),
             // GForce error -> elevator handle movement rate
             gforce_controller: PIDController::new(-2.0, 2.0, 0.008, 0.008, 0.001),
+            // Pitch rate error -> elevator handle movement rate
+            pitch_rate_controller: PIDController::new(-2.0, 2.0, 0.01, 0.015, 0.0025),
         }
     }
 }
@@ -78,12 +82,12 @@ impl PitchController {
     fn load_factor_limitation(&mut self, delta_elevator: f64, ctx: &FBW) -> f64 {
         let dt = ctx.sim_time.delta();
         if ctx.data.gforce() > ctx.normal_law_protections.max_load_factor {
-            self.gforce_controller.update(
+            self.gforce_controller.update_anti_windup(
                 ctx.normal_law_protections.max_load_factor - ctx.data.gforce(),
                 dt,
             )
         } else if ctx.data.gforce() < ctx.normal_law_protections.min_load_factor {
-            self.gforce_controller.update(
+            self.gforce_controller.update_anti_windup(
                 ctx.normal_law_protections.min_load_factor - ctx.data.gforce(),
                 dt,
             )
@@ -108,12 +112,71 @@ impl PitchController {
         };
         let mut delta_elevator = self
             .aoa_controller
-            .update(commanded_aoa - ctx.data.alpha(), dt);
+            .update_anti_windup(commanded_aoa - ctx.data.alpha(), dt);
 
         // Apply protections
         delta_elevator = self.load_factor_limitation(delta_elevator, ctx);
         // This isn't specified in the FCOM, but the flight model is not true enough to real life.
-        delta_elevator = self.pitch_attitude_protection(delta_elevator);
+        delta_elevator = self.pitch_attitude_protection(delta_elevator, ctx);
+
+        delta_elevator
+    }
+
+    // Applies pitch attitude protection to a proposed elevator movement
+    fn pitch_attitude_protection(&mut self, delta_elevator: f64, ctx: &FBW) -> f64 {
+        let dt = ctx.sim_time.delta();
+        if ctx.data.pitch() > ctx.normal_law_protections.max_pitch_angle {
+            // Correct using up to -5 degrees/second pitch rate when we are up to 1 degree above our limit
+            // Thereafter, correct using -5 degrees/second pitch rate
+            let corrective_pitch_rate = -5.0
+                * linear_decay_coefficient(
+                    ctx.data.pitch(),
+                    ctx.normal_law_protections.max_pitch_angle + 1.0,
+                    ctx.normal_law_protections.max_pitch_angle,
+                );
+            return self
+                .pitch_rate_controller
+                .update_anti_windup(corrective_pitch_rate - ctx.data.pitch_rate(ctx), dt);
+        }
+
+        if ctx.data.pitch() < ctx.normal_law_protections.min_pitch_angle {
+            // Correct using up to +5 degrees/second pitch rate when we are up to 1 degree above our limit
+            // Thereafter, correct using +5 degrees/second pitch rate
+            let corrective_pitch_rate = 5.0
+                * linear_decay_coefficient(
+                    ctx.data.pitch(),
+                    ctx.normal_law_protections.min_pitch_angle - 1.0,
+                    ctx.normal_law_protections.min_pitch_angle,
+                );
+            return self
+                .pitch_rate_controller
+                .update_anti_windup(corrective_pitch_rate - ctx.data.pitch_rate(ctx), dt);
+        }
+
+        // Naturally limit the pitch up/down rate from +/-30 degree/sec to 0 as we approach our limits
+        let max_pitch_rate = 30.0
+            * linear_decay_coefficient(
+                ctx.data.pitch(),
+                0.0,
+                ctx.normal_law_protections.max_pitch_angle,
+            );
+        if ctx.data.pitch_rate(ctx) > max_pitch_rate && delta_elevator >= 0.0 {
+            return self
+                .pitch_rate_controller
+                .update_anti_windup(max_pitch_rate - ctx.data.pitch_rate(ctx), dt);
+        }
+
+        let min_pitch_rate = -30.0
+            * linear_decay_coefficient(
+                ctx.data.pitch(),
+                0.0,
+                ctx.normal_law_protections.min_pitch_angle,
+            );
+        if ctx.data.pitch_rate(ctx) < min_pitch_rate && delta_elevator <= 0.0 {
+            return self
+                .pitch_rate_controller
+                .update_anti_windup(min_pitch_rate - ctx.data.pitch_rate(ctx), dt);
+        }
 
         delta_elevator
     }
@@ -173,7 +236,8 @@ impl RollController {
                     self.roll += 15.0 * ctx.input.yoke_x * dt; // 15 degrees/sec at maximum deflection
                     self.roll = clamp(self.roll, 0.0, 1.0);
                 }
-                self.controller.update(self.roll - ctx.data.roll(), dt)
+                self.controller
+                    .update_anti_windup(self.roll - ctx.data.roll(), dt)
             }
             _ => ailerons,
         }
